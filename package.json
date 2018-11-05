@@ -1,0 +1,57 @@
+{
+  "name": "dependency-check",
+  "version": "0.0.0",
+  "description": "A small tool to check if all package dependencies are production ready",
+  "scripts": {
+    "debug": "cd ./src && node --inspect-brk=0.0.0.0:5858 ./server.js",
+    "start": "cd ./src && node ./server.js",
+    "build": "pkg ./package.json --targets latest-linux-x64,latest-macos-x64,latest-win-x64 --out-path ./app/dist",
+    "lint": "eslint -c ./package.json ./",
+    "madge": "madge ./app/src && madge ./app/src --circular"
+  },
+  "pkg": {
+    "assets": [
+      "src/**/*.js"
+    ]
+  },
+  "bin": "app/src/bundle.js",
+  "author": "Glenn de Haan",
+  "license": "MIT",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module"
+    },
+    "env": {
+      "es6": true,
+      "node": true
+    },
+    "rules": {
+      "no-console": 0,
+      "react/prop-types": 0,
+      "comma-dangle": [
+        "error",
+        "never"
+      ],
+      "indent": [
+        "error",
+        4
+      ]
+    },
+    "extends": [
+      "eslint:recommended"
+    ]
+  },
+  "dependencies": {
+    "commander": "^2.19.0",
+    "listr": "^0.14.2"
+  },
+  "devDependencies": {
+    "eslint": "^5.0.1",
+    "eslint-loader": "^2.0.0",
+    "madge": "^3.2.0"
+  }
+}
