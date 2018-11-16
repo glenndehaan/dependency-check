@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "description": "A small tool to check if all package dependencies are production ready",
   "scripts": {
-    "debug": "cd ./src && node --inspect-brk=0.0.0.0:5858 ./server.js",
-    "start": "cd ./src && node ./server.js",
-    "build": "pkg ./package.json --targets latest-linux-x64,latest-macos-x64,latest-win-x64 --out-path ./app/dist",
+    "debug": "cd ./src && node --inspect-brk=0.0.0.0:5858 ./index.js ./files/composer.json ./files/package.json",
+    "start": "cd ./src && node ./index.js ./files/composer.json ./files/package.json",
+    "build": "pkg ./package.json --targets latest-linux-x64,latest-macos-x64,latest-win-x64 --out-path ./dist",
     "lint": "eslint -c ./package.json ./",
-    "madge": "madge ./app/src && madge ./app/src --circular"
+    "madge": "madge ./src && madge ./src --circular"
   },
   "pkg": {
     "assets": [

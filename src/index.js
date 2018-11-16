@@ -3,7 +3,7 @@
  */
 const fs = require("fs");
 const program = require('commander');
-const listr = require('listr');
+const Listr = require('listr');
 
 /**
  * Reads a file from the filesystem
@@ -28,9 +28,33 @@ const checkDependencies = (path) => {
     return new Promise((resolve, reject) => {
         try {
             const file = readJsonFile(path);
+            const versionCheckRegex = /[0-9]+.[0-9]+.[0-9]+$/;
 
             // Check what file we are dealing with
+
+            // package.json
             if (typeof file.dependencies !== "undefined") {
+                const keys = Object.keys(file.dependencies);
+
+                for(let item = 0; item < keys.length; item++) {
+                    if(!versionCheckRegex.test(file.dependencies[keys[item]])) {
+                        reject(`Dependency problem found! ${keys[item]}: ${file.dependencies[keys[item]]}`);
+                    }
+                }
+
+                resolve();
+            }
+
+            //composer.json
+            if (typeof file.require !== "undefined") {
+                const keys = Object.keys(file.require);
+
+                for(let item = 0; item < keys.length; item++) {
+                    if(!versionCheckRegex.test(file.require[keys[item]])) {
+                        reject(`Dependency problem found! ${keys[item]}: ${file.require[keys[item]]}`);
+                    }
+                }
+
                 resolve();
             }
 
@@ -83,6 +107,15 @@ for (let item = 0; item < files.length; item++) {
                     }
                 })
             });
+        } else {
+            checkDependencies(file).catch((e) => {
+                if (soft) {
+                    console.warn(`[${file}] ${e}`);
+                } else {
+                    console.error(`[${file}] ${e}`);
+                    process.exit(1);
+                }
+            });
         }
     } else {
         console.error(`[ERROR] The following file is missing: ${file}`);
@@ -94,7 +127,8 @@ for (let item = 0; item < files.length; item++) {
  * Run Listr if we are ready
  */
 if (!cleanUi) {
-    new listr(tasks).run().catch(() => {
+    new Listr(tasks).run().catch(() => {
         console.log('Please review errors above!');
+        process.exit(1);
     });
 }
