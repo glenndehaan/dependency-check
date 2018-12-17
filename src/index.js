@@ -6,6 +6,11 @@ const program = require('commander');
 const Listr = require('listr');
 
 /**
+ * Check if we are using the dev version
+ */
+const dev = process.env.NODE_ENV !== 'production';
+
+/**
  * Reads a file from the filesystem
  *
  * @param path
@@ -17,6 +22,21 @@ const readJsonFile = (path) => {
     } else {
         return {};
     }
+};
+
+/**
+ * Replaces multiple strings in a string
+ *
+ * @param str
+ * @param mapObj
+ * @return {string | void | *}
+ */
+const replaceAll = (str, mapObj) => {
+    const re = new RegExp(Object.keys(mapObj).join("|"), "gi");
+
+    return str.replace(re, (matched) =>{
+        return mapObj[matched.toLowerCase()];
+    });
 };
 
 /**
@@ -32,7 +52,7 @@ const checkDependencies = (path) => {
 
             // Check what file we are dealing with
 
-            // package.json
+            // package.json / bower.json
             if (typeof file.dependencies !== "undefined") {
                 const keys = Object.keys(file.dependencies);
 
@@ -40,18 +60,48 @@ const checkDependencies = (path) => {
                     if(!versionCheckRegex.test(file.dependencies[keys[item]])) {
                         reject(`Dependency problem found! ${keys[item]}: ${file.dependencies[keys[item]]}`);
                     }
+
+                    if(productionVersion) {
+                        const stableVersion = replaceAll(file.dependencies[keys[item]].split(".")[0], {
+                            '>=': '',
+                            '~': '',
+                            '^': '',
+                            '<': '',
+                            '>': '',
+                            'v': ''
+                        });
+
+                        if(parseInt(stableVersion) < 1) {
+                            reject(`Non stable dependency found! ${keys[item]}: ${file.dependencies[keys[item]]}`);
+                        }
+                    }
                 }
 
                 resolve();
             }
 
-            //composer.json
+            // composer.json
             if (typeof file.require !== "undefined") {
                 const keys = Object.keys(file.require);
 
                 for(let item = 0; item < keys.length; item++) {
                     if(!versionCheckRegex.test(file.require[keys[item]])) {
                         reject(`Dependency problem found! ${keys[item]}: ${file.require[keys[item]]}`);
+                    }
+
+                    if(productionVersion) {
+                        const stableVersion = replaceAll(file.require[keys[item]].split(".")[0], {
+                           '>=': '',
+                            '~': '',
+                            '^': '',
+                            '<': '',
+                            '>': '',
+                            'v': ''
+                        });
+
+                        if(parseInt(stableVersion) < 1) {
+                            reject(`Non stable dependency found! ${keys[item]}: ${file.require[keys[item]]}`);
+                        }
                     }
                 }
 
@@ -79,6 +129,7 @@ program
     .usage('[options] <files ...>')
     .option('-s, --soft', "Don't crash when check's fail")
     .option('-c, --clean-ui', "Don't use any animations on the console output. Mainly used for a automation systems")
+    .option('-p, --production-version', "Check if the package version is stable (>= 1.0.0)")
     .parse(process.argv);
 
 /**
@@ -88,12 +139,13 @@ const files = program.args;
 const tasks = [];
 const cleanUi = typeof program.cleanUi !== "undefined";
 const soft = typeof program.soft !== "undefined";
+const productionVersion = typeof program.productionVersion !== "undefined";
 
 /**
  * Loop over files and check if they exist
  */
 for (let item = 0; item < files.length; item++) {
-    const file = `${__dirname}/${files[item]}`;
+    const file = `${dev ? __dirname : process.cwd()}/${files[item]}`;
 
     if (fs.existsSync(file)) {
         if (!cleanUi) {
